@@ -13,8 +13,13 @@ You can visit these cats on [GitHub Pages][1].
 - Keyboard shortcuts and a lightbox featuring cats
 - ServiceWorker for offline-first supported cats
 
+# Screenshot
+
+[![A screenshot of the demo page][2]][1]
+
 # License
 
 MIT
 
 [1]: https://bevacqua.github.io/flickr-lightbox
+[2]: https://i.imgur.com/tD6vkdy.jpg
