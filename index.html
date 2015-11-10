@@ -1,0 +1,294 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Flickr Lightbox</title>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link href='http://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+    <style>
+      body {
+        background-color: #4d394b;
+        color: #ab9ba9;
+        font-family: Lato, sans-serif;
+        padding: 0;
+        margin: 0;
+        margin-bottom: 80px;
+      }
+      .vw-title {
+        font-size: 3em;
+      }
+      h1,
+      h2 {
+        text-align: center;
+        text-shadow: 1px 1px rgba(0, 0, 0, 0.1);
+      }
+      img {
+        display: block;
+        max-width: 100%;
+      }
+      .fk-thumbnails {
+        text-align: center;
+      }
+      .fk-photo {
+        display: inline-block;
+        vertical-align: top;
+        cursor: pointer;
+        margin: 3px;
+        border: 1px solid transparent;
+        width: 150px;
+        height: 150px;
+        column-count: auto;
+        -webkit-column-count: auto;
+        -moz-column-count: auto;
+      }
+      .fk-photo:hover {
+        border-color: #ab9ba9;
+      }
+      .pg-container {
+        text-align: center;
+      }
+      .pg-pager {
+        display: inline-block;
+        cursor: pointer;
+        font-size: 5em;
+      }
+      .pg-pager:hover {
+        color: #ccbcca;
+      }
+      .pg-hidden {
+        display: none;
+      }
+      .lb-container {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #4d394b;
+      }
+      .lb-show {
+        display: block;
+      }
+      .lb-image {
+        margin: 0 auto;
+      }
+      .lb-close {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        cursor: pointer;
+        font-family: 'Comic Sans MS', sans-serif;
+      }
+      .lb-arrow {
+        position: fixed;
+        top: 50%;
+        width: 70px;
+        height: 70px;
+        margin-top: -35px;
+        line-height: 60px;
+        font-size: 4em;
+        text-align: center;
+        cursor: pointer;
+        font-family: 'Comic Sans MS', sans-serif;
+        background-color: #ab9ba9;
+        color: #4d394b;
+      }
+      .lb-arrow:hover {
+        background-color: #bbadb9;
+      }
+      .lb-prev {
+        border-radius: 0 6px 6px 0;
+      }
+      .lb-next {
+        border-radius: 6px 0 0 6px;
+        right: 0;
+      }
+      .lb-disabled {
+        background-color: #442e42;
+        color: #583554;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class='vw-title'>Flickr Cats</h1>
+    <div class='fk-thumbnails'></div>
+    <div class='lb-container lb-hidden'>
+      <h2><span class='lb-close'>x</span><span class='lb-title'></span></h2>
+      <img class='lb-image'/>
+      <div class='lb-arrow lb-prev'>&lt;</div>
+      <div class='lb-arrow lb-next'>&gt;</div>
+    </div>
+    <footer class='pg-container'>
+      <div class='pg-pager pg-hidden'>...</div>
+    </footer>
+    <script>
+      void function (window, document) {
+        var nextPage = 1;
+        var thumbnails = $('.fk-thumbnails');
+        var pager = $('.pg-pager');
+        var lightbox = $('.lb-container');
+        var lightboxTitle = $('.lb-title', lightbox);
+        var lightboxImage = $('.lb-image', lightbox);
+        var lightboxPrev = $('.lb-prev', lightbox);
+        var lightboxNext = $('.lb-next', lightbox);
+        var selection;
+
+        more();
+        thumbnails.addEventListener('click', clickedThumbnail);
+        pager.addEventListener('click', clickedPager);
+        lightbox.addEventListener('click', hide);
+        lightboxPrev.addEventListener('click', stop(prev));
+        lightboxNext.addEventListener('click', stop(next));
+        document.addEventListener('keydown', shortcuts);
+
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('serviceworker.js');
+        }
+
+        function clickedThumbnail (e) {
+          var el = e.target;
+          if (el.tagName === 'IMG') {
+            highlight(el);
+          }
+        }
+
+        function clickedPager () {
+          setClass(pager, 'pg-hidden', true);
+          more();
+        }
+
+        function shortcuts (e) {
+          if (!selection) {
+            return;
+          }
+          var esc = 27;
+          var left = 37;
+          var right = 39;
+          if (left === e.which) {
+            prev();
+          } else if (right === e.which) {
+            next();
+          } else if (esc === e.which) {
+            hide();
+          }
+        }
+
+        function stop (fn) {
+          return function (e) {
+            e.stopPropagation();
+            return fn.apply(this, arguments);
+          };
+        }
+
+        function prev () {
+          if (selection.previousSibling) {
+            highlight(selection.previousSibling);
+          }
+        }
+
+        function next () {
+          if (selection.nextSibling) {
+            highlight(selection.nextSibling);
+          }
+        }
+
+        function invalidate () {
+          setClass(lightboxPrev, 'lb-disabled', !selection.previousSibling);
+          setClass(lightboxNext, 'lb-disabled', !selection.nextSibling);
+        }
+
+        function highlight (thumb) {
+          text(lightboxTitle, thumb.getAttribute('data-title'));
+          lightboxImage.src = thumb.getAttribute('data-large');
+          selection = thumb;
+          setClass(lightbox, 'lb-show', true);
+          invalidate();
+        }
+
+        function hide () {
+          selection = null;
+          setClass(lightbox, 'lb-show', false);
+        }
+
+        function more () {
+          search('cute', 'kitten', nextPage++);
+        }
+
+        function search (terms, tags, page) {
+          var query = {
+            api_key: '7f1075dd1213418aab4d5a69ed12357a',
+            method: 'flickr.photos.search',
+            format: 'json',
+            tags: tags,
+            text: terms,
+            page: page,
+            per_page: 50
+          };
+          var url = 'https://api.flickr.com/services/rest';
+          jsonp(url, query, renderPhotos);
+        }
+
+        function renderPhotos (data) {
+          data.photos.photo.forEach(renderPhoto);
+          setClass(pager, 'pg-hidden', false);
+        }
+
+        function renderPhoto (photo) {
+          var thumb = tag('img', 'fk-photo');
+          thumb.src = buildFlickrPhotoUrl(photo, '_q');
+          thumb.setAttribute('data-large', buildFlickrPhotoUrl(photo));
+          thumb.setAttribute('data-title', photo.title);
+          thumbnails.appendChild(thumb);
+        }
+
+        function buildFlickrPhotoUrl (photo, postfix) {
+          return [
+            'https://farm', photo.farm,
+            '.staticflickr.com/', photo.server,
+            '/', photo.id,
+            '_', photo.secret,
+            postfix || '',
+            '.jpg'].join('');
+        }
+
+        function tag (name, className) {
+          var el = document.createElement(name);
+          if (className) {
+            el.className = className;
+          }
+          return el;
+        }
+
+        function text (el, value) {
+          el.textContent = el.innerText = value;
+        }
+
+        function jsonp (url, query, done) {
+          var key = query.jsoncallback = '_jsonp';
+          var script = tag('script');
+          script.src = url + qs(query);
+          window[key] = done;
+          document.body.appendChild(script);
+        }
+
+        function qs (query) {
+          return '?' + Object.keys(query).map(keyValuePair).join('&');
+          function keyValuePair (key) {
+            return key + '=' + query[key];
+          }
+        }
+
+        function setClass (el, className, enabled) {
+          el.classList[enabled ? 'add' : 'remove'](className);
+        }
+
+        function $ (selector, context) {
+          return (context || document).querySelector(selector);
+        }
+      }(window, document);
+    </script>
+  </body>
+</html>
