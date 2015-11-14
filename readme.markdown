@@ -1,4 +1,4 @@
-# Flickr Lightbox
+# Flickr Cats
 
 > A demo page using the Flickr API, ServiceWorker, and plain JavaScript
 
@@ -21,5 +21,5 @@ You can visit these cats on [GitHub Pages][1].
 
 MIT
 
-[1]: https://bevacqua.github.io/flickr-lightbox/
+[1]: https://bevacqua.github.io/flickr-cats/
 [2]: https://i.imgur.com/tD6vkdy.jpg
